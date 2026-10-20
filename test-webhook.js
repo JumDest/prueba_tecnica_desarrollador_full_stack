@@ -3,7 +3,7 @@ const crypto = require("crypto");
 const secret = process.env.WEBHOOK_SECRET || "mi_secreto_super_seguro";
 const payload = JSON.stringify({ 
   eventId: "evt_pago_1001", 
-  leadId: "34bdbd33-6c5e-477b-a179-1af102db3e28", 
+  leadId: "3104a06b-ee51-4101-8615-b33ec0a44223", 
   estadoPago: "COMPLETADO" 
 });
 
