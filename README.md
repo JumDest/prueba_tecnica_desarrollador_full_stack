@@ -42,7 +42,7 @@ npm run dev
 o	Formulario público: Accede a http://localhost:3000
 o	Panel de administración: Accede a http://localhost:3000/admin e ingresa la contraseña configurada en ADMIN_PASSWORD.
 
-**Decisiones Técnicas***
+**Decisiones Técnicas**
 1.	Arquitectura Unificada (Next.js App Router): Se seleccionó la implementación de Route Handlers de Next.js (/api/leads y /api/admin/leads) para mantener la aplicación en un repositorio único (monorepo simplificado). Esto optimiza los tiempos de desarrollo, reduce la latencia cliente-servidor y facilita el despliegue continuo en Vercel.
 
 2.	Validación en Doble Capa:
