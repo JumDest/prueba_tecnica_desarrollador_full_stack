@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-mi_secreto_super_seguro}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped

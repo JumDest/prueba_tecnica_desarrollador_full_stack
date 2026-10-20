@@ -1,26 +1,60 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-// Instancia del cliente de Prisma
-const prisma = new PrismaClient();
+// Clasificación de prioridad por IA con Fallback heurístico
+async function clasificarPrioridad(mensaje: string, procedimiento: string): Promise<string> {
+  const fallbackHeuristico = () => {
+    const texto = `${mensaje} ${procedimiento}`.toLowerCase();
+    if (texto.includes("urgente") || texto.includes("dolor") || texto.includes("cirug") || texto.includes("inmediat") || texto.includes("complicac")) {
+      return "Alta";
+    }
+    if (texto.includes("precio") || texto.includes("costo") || texto.includes("cotiz") || texto.includes("descuento")) {
+      return "Media";
+    }
+    return "Baja";
+  };
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return fallbackHeuristico();
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "Eres un triage médico. Clasifica la prioridad del mensaje en 'Alta', 'Media' o 'Baja'. Responde ÚNICAMENTE con una de esas tres palabras." },
+          { role: "user", content: `Procedimiento: ${procedimiento}. Mensaje: ${mensaje}` },
+        ],
+        max_tokens: 10,
+      }),
+    });
+
+    if (!res.ok) return fallbackHeuristico();
+    const data = await res.json();
+    const output = data.choices?.[0]?.message?.content?.trim();
+    return ["Alta", "Media", "Baja"].includes(output) ? output : fallbackHeuristico();
+  } catch {
+    return fallbackHeuristico();
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { nombre, correo, telefono, pais, procedimiento, mensaje } = body;
 
-    // Validación en el servidor (requisito obligatorio)
     if (!nombre || !correo || !telefono || !pais || !procedimiento) {
-      return NextResponse.json(
-        { error: "Faltan campos obligatorios" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
 
-    // Asignación automática de coordinación
     const coordinacion = pais === "Colombia" ? "Nacional" : "Internacional";
+    const prioridad = await clasificarPrioridad(mensaje || "", procedimiento);
 
-    // Guardar en la base de datos de Supabase
     const nuevoLead = await prisma.lead.create({
       data: {
         nombre,
@@ -31,18 +65,13 @@ export async function POST(request: Request) {
         mensaje: mensaje || "",
         coordinacion,
         estado: "Nuevo",
+        prioridad,
       },
     });
 
-    return NextResponse.json(
-      { success: true, lead: nuevoLead },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, lead: nuevoLead }, { status: 201 });
   } catch (error) {
-    console.error("Error al crear el lead:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor al procesar la solicitud" },
-      { status: 500 }
-    );
+    console.error("Error al crear lead:", error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
