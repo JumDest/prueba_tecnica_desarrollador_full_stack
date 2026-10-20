@@ -80,3 +80,11 @@ o	Redacción preliminar de las respuestas teóricas y casos de infraestructura d
 * **Despliegue:** Expone el puerto `3000` y gestiona las variables de entorno necesarias para levantar el servicio en cualquier entorno aislado mediante:
   ```bash
   docker compose up --build
+
+  ##  Guía de Pruebas y Verificación Local
+
+### Probar el Webhook de Pagos
+Para verificar la firma HMAC y la idempotencia en local, ejecuta el script de prueba en tu terminal:
+
+```bash
+node test-webhook.js
